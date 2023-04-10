@@ -21,6 +21,7 @@ from pathlib import Path
 from slugify import slugify
 from mkdocs.utils import yaml_load, warning_filter, dirname_to_title, get_markdown_title
 from urllib.parse import urlsplit
+
 log = logging.getLogger(__name__)
 log.addFilter(warning_filter)
 
@@ -44,7 +45,8 @@ class Parser:
                 value = str
             elif type(item) is dict:
                 value = list(item.values())[0]
-                if type(value) is str and value.startswith(WILDCARD_INCLUDE_STATEMENT):
+                if type(value) is str and value.startswith(
+                        WILDCARD_INCLUDE_STATEMENT):
                     root_dir = Path(self.config['config_file_path']).parent
                     mkdocs_path = value[len(WILDCARD_INCLUDE_STATEMENT):]
                     dirs = sorted(root_dir.glob(mkdocs_path))
@@ -53,7 +55,9 @@ class Parser:
                         for mkdocs_config in dirs:
                             site = {}
                             if os.path.exists(mkdocs_config):
-                                site[str(mkdocs_config)] = f"{INCLUDE_STATEMENT}{mkdocs_config.resolve()}"
+                                site[str(
+                                    mkdocs_config
+                                )] = f"{INCLUDE_STATEMENT}{mkdocs_config.resolve()}"
                                 value.append(site)
             else:
                 value = None
@@ -70,7 +74,8 @@ class Parser:
         def extractAliasAndPath(absPath):
             loader = IncludeNavLoader(self.config, absPath).read()
             alias = loader.getAlias()
-            docsDir = os.path.join(loader.rootDir, os.path.dirname(absPath), loader.getDocsDir())
+            docsDir = os.path.join(loader.rootDir, os.path.dirname(absPath),
+                                   loader.getDocsDir())
             return [alias, docsDir, os.path.join(loader.rootDir, absPath)]
 
         resolvedPaths = list(
@@ -78,9 +83,9 @@ class Parser:
 
         for alias, docsDir, ymlPath in resolvedPaths:
             if not os.path.exists(docsDir):
-                log.critical(
-                    "[mkdocs-monorepo] The {} path is not valid. ".format(docsDir) +
-                    "Please update your 'nav' with a valid path.")
+                log.critical("[mkdocs-monorepo] The {} path is not valid. ".
+                             format(docsDir) +
+                             "Please update your 'nav' with a valid path.")
                 raise SystemExit(1)
 
         return resolvedPaths
@@ -96,14 +101,14 @@ class Parser:
             elif type(item) is dict:
                 key = list(item.keys())[0]
                 value = list(item.values())[0]
-                if type(value) is str and value.startswith(WILDCARD_INCLUDE_STATEMENT):
+                if type(value) is str and value.startswith(
+                        WILDCARD_INCLUDE_STATEMENT):
                     root_dir = Path(self.config['config_file_path']).parent
                     mkdocs_path = value[len(WILDCARD_INCLUDE_STATEMENT):]
                     if not mkdocs_path.endswith(tuple([".yml", ".yaml"])):
                         log.critical(
-                            "[mkdocs-monorepo] The wildcard include path {} does not end with .yml (or .yaml)".format(
-                                mkdocs_path)
-                        )
+                            "[mkdocs-monorepo] The wildcard include path {} does not end with .yml (or .yaml)"
+                            .format(mkdocs_path))
                         raise SystemExit(1)
                     dirs = sorted(root_dir.glob(mkdocs_path))
                     if dirs:
@@ -114,16 +119,19 @@ class Parser:
                                 with open(mkdocs_config, 'rb') as f:
                                     site_yaml = yaml_load(f)
                                     site_name = site_yaml["site_name"]
-                                site[site_name] = f"{INCLUDE_STATEMENT}{mkdocs_config.resolve()}"
+                                site[
+                                    site_name] = f"{INCLUDE_STATEMENT}{mkdocs_config.resolve()}"
                                 value.append(site)
                             except OSError:
-                                log.error(f"[mkdocs-monorepo] The {mkdocs_config} path is not valid.")
+                                log.error(
+                                    f"[mkdocs-monorepo] The {mkdocs_config} path is not valid."
+                                )
                             except KeyError:
                                 log.critical(
-                                    "[mkdocs-monorepo] The file path {} does not contain a valid 'site_name' key ".format(mkdocs_config) +
-                                    "in the YAML file. Please include it to indicate where your documentation " +
-                                    "should be moved to."
-                                )
+                                    "[mkdocs-monorepo] The file path {} does not contain a valid 'site_name' key "
+                                    .format(mkdocs_config) +
+                                    "in the YAML file. Please include it to indicate where your documentation "
+                                    + "should be moved to.")
                                 raise SystemExit(1)
                         if not value:
                             return None
@@ -137,8 +145,7 @@ class Parser:
                 nav[index] = {}
                 nav[index][key] = IncludeNavLoader(
                     self.config,
-                    value[len(INCLUDE_STATEMENT):]
-                ).read().getNav()
+                    value[len(INCLUDE_STATEMENT):]).read().getNav()
 
                 if nav[index][key] is None:
                     return None
@@ -154,8 +161,8 @@ class Parser:
 
 class IncludeNavLoader:
     def __init__(self, config, navPath):
-        self.rootDir = os.path.normpath(os.path.join(
-            os.getcwd(), config['config_file_path'], '../'))
+        self.rootDir = os.path.normpath(
+            os.path.join(os.getcwd(), config['config_file_path'], '../'))
         self.navPath = navPath
         self.absNavPath = os.path.normpath(
             os.path.join(self.rootDir, self.navPath))
@@ -167,16 +174,15 @@ class IncludeNavLoader:
     def read(self):
         if not self.absNavPath.endswith(tuple([".yml", ".yaml"])):
             log.critical(
-                "[mkdocs-monorepo] The included file path {} does not point to a .yml (or .yaml) file".format(
-                    self.absNavPath)
-            )
+                "[mkdocs-monorepo] The included file path {} does not point to a .yml (or .yaml) file"
+                .format(self.absNavPath))
             raise SystemExit(1)
 
         if not self.absNavPath.startswith(self.rootDir):
             log.critical(
-                "[mkdocs-monorepo] The mkdocs file {} is outside of the current directory. ".format(self.absNavPath) +
-                "Please move the file and try again."
-            )
+                "[mkdocs-monorepo] The mkdocs file {} is outside of the current directory. "
+                .format(self.absNavPath) +
+                "Please move the file and try again.")
             raise SystemExit(1)
 
         try:
@@ -187,7 +193,8 @@ class IncludeNavLoader:
             # the sub folder and scaffold the `nav` property from it
             if self.navYaml and 'nav' not in self.navYaml:
                 docsDir = self.navYaml.get("docs_dir", "docs")
-                docsDirPath = os.path.join(os.path.dirname(self.absNavPath), docsDir)
+                docsDirPath = os.path.join(os.path.dirname(self.absNavPath),
+                                           docsDir)
 
                 def navFromDir(path):
                     directory = {}
@@ -204,7 +211,8 @@ class IncludeNavLoader:
                         directory[dn] = []
 
                         for dirItem in dirnames:
-                            subNav = navFromDir(path=os.path.join(path, dirItem))
+                            subNav = navFromDir(
+                                path=os.path.join(path, dirItem))
                             if subNav:
                                 directory[dn].append(subNav)
 
@@ -212,7 +220,9 @@ class IncludeNavLoader:
                             fileName, fileExt = os.path.splitext(fileItem)
                             if fileExt == '.md':
                                 fileTitle = get_markdown_title(fileName)
-                                filePath = os.path.join(os.path.relpath(path, docsDirPath), fileItem)
+                                filePath = os.path.join(
+                                    os.path.relpath(path, docsDirPath),
+                                    fileItem)
                                 directory[dn].append({fileTitle: filePath})
 
                         if len(directory[dn]) == 0 or directory[dn] == [{}]:
@@ -222,22 +232,22 @@ class IncludeNavLoader:
 
                 navYaml = navFromDir(docsDirPath)
                 if navYaml:
-                    self.navYaml["nav"] = navYaml[os.path.basename(docsDirPath)]
+                    self.navYaml["nav"] = navYaml[os.path.basename(
+                        docsDirPath)]
 
         except OSError:
             log.critical(
-                "[mkdocs-monorepo] The file path {} does not exist, ".format(self.absNavPath) +
-                "is not valid YAML, " +
-                "or does not contain a valid 'site_name' and 'nav' keys."
-            )
+                "[mkdocs-monorepo] The file path {} does not exist, ".format(
+                    self.absNavPath) + "is not valid YAML, " +
+                "or does not contain a valid 'site_name' and 'nav' keys.")
             raise SystemExit(1)
 
         if self.navYaml and 'site_name' not in self.navYaml:
             log.critical(
-                "[mkdocs-monorepo] The file path {} does not contain a valid 'site_name' key ".format(self.absNavPath) +
-                "in the YAML file. Please include it to indicate where your documentation " +
-                "should be moved to."
-            )
+                "[mkdocs-monorepo] The file path {} does not contain a valid 'site_name' key "
+                .format(self.absNavPath) +
+                "in the YAML file. Please include it to indicate where your documentation "
+                + "should be moved to.")
             raise SystemExit(1)
 
         if self.navYaml and 'nav' not in self.navYaml:
@@ -245,7 +255,8 @@ class IncludeNavLoader:
                 "[mkdocs-monorepo] The file path {} ".format(self.absNavPath) +
                 "does not contain a valid 'nav' key in the YAML file " +
                 "and the docs folder is not the default one, i.e. `docs`. " +
-                "Please include the `nav` key to indicate how your documentation should be presented in the navigation, " +
+                "Please include the `nav` key to indicate how your documentation should be presented in the navigation, "
+                +
                 "or include a 'docs_dir' to indicate that automatic nav generation should be used."
             )
             raise SystemExit(1)
@@ -265,7 +276,8 @@ class IncludeNavLoader:
         return alias
 
     def getNav(self):
-        return self._prependAliasToNavLinks(self.getAlias(), self.navYaml["nav"])
+        return self._prependAliasToNavLinks(self.getAlias(),
+                                            self.navYaml["nav"])
 
     def _prependAliasToNavLinks(self, alias, nav):
         for index, item in enumerate(nav):
@@ -284,7 +296,8 @@ class IncludeNavLoader:
 
                 if value.startswith(INCLUDE_STATEMENT):
                     log.critical(
-                        "[mkdocs-monorepo] We currently do not support nested !include statements inside of Mkdocs.")
+                        "[mkdocs-monorepo] We currently do not support nested !include statements inside of Mkdocs."
+                    )
                     raise SystemExit(1)
 
                 def formatNavLink(alias, value):

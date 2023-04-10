@@ -30,7 +30,7 @@ class MonorepoPlugin(BasePlugin):
         """Initialize MonorepoPlugin and return config of aggregated docs
         folder."""
         # If no 'nav' defined, we don't need to run.
-        if not config.get('nav'):
+        if not config.get("nav"):
             return config
 
         # setting originalDocsDir means that on_config has been run
@@ -47,7 +47,10 @@ class MonorepoPlugin(BasePlugin):
         self.merger = Merger(config)
         self.aliases = {}
         for alias, docs_dir, yaml_file in resolvedPaths:
-            self.aliases[alias] = { 'docs_dir': docs_dir, 'yaml_file': yaml_file }
+            self.aliases[alias] = {
+                'docs_dir': docs_dir,
+                'yaml_file': yaml_file
+            }
             self.merger.append(alias, docs_dir)
         new_docs_dir = self.merger.merge()
 
@@ -67,7 +70,8 @@ class MonorepoPlugin(BasePlugin):
         # Only in case any files were moved.
         if len(self.files_source_dir) > 0:
             if page.file.abs_src_path in self.files_source_dir:
-                page.file.abs_src_path = self.files_source_dir[page.file.abs_src_path]
+                page.file.abs_src_path = self.files_source_dir[
+                    page.file.abs_src_path]
                 set_edit_url(config, page, self)
         return page
 
